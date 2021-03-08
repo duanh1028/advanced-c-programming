@@ -1,0 +1,175 @@
+        -:    0:Source:bmp.c
+        -:    0:Graph:bmp.gcno
+        -:    0:Data:bmp.gcda
+        -:    0:Runs:1
+        -:    0:Programs:1
+        -:    1:#include<stdio.h>
+        -:    2:#include<stdlib.h>
+        -:    3:#include<errno.h>
+        -:    4:#include<string.h>
+        -:    5:#include "bmp.h"
+        -:    6:#define HEADERSIZE 54
+        -:    7:#define DIBHEADERSIZE 40
+        -:    8:#define BITSPERPIXEL 24
+        -:    9:#define MAGICVALUE 0x4d42
+        -:   10:#define NUMOFPLANES 1
+        -:   11:#define COMPRESSION 0
+        -:   12:#define NUMOFCOLORS 0
+        -:   13:#define IMPORTANTCOLORS 0
+        -:   14:#define BYTESPERPIXEL 3
+        -:   15:const char* header_error = "Invalid header!!!";
+        -:   16:const char* write_header_error = "Cannot write the header into the file!!!";
+        -:   17:const char* read_header_error = "Can't read the header!!!";
+        -:   18:const char* read_data_error = "Can't read the data!!!";
+        -:   19:const char* memory_error = "There isn't enough memory for malloc!!!";
+        -:   20:const char* write_data_error = "Cannot write data into the file!!!";
+        -:   21:
+        -:   22:long _get_file_size(FILE* fp);
+        -:   23:int _get_padding(const BMPHeader* header);
+        -:   24:int _get_row_size(const BMPHeader* header);
+        -:   25:int _get_image_size(const BMPHeader* header);
+        -:   26:
+        9:   27:BMPImage* read_bmp(FILE* fp, const char** a_error) {
+        9:   28:	if(fp == NULL || ferror(fp)) {
+        2:   29:		*a_error = strerror(errno);
+        2:   30:		return NULL;
+        -:   31:	}	
+        7:   32:	fseek(fp, 0, SEEK_SET);
+        7:   33:	BMPImage* bmp = malloc(sizeof(*bmp));
+        -:   34://	if(bmp == NULL) {
+        -:   35://		free(bmp);
+        -:   36://		*a_error = strerror(errno);
+        -:   37://		return NULL;
+        -:   38://	}
+        7:   39:	if(fread(&bmp -> header, HEADERSIZE, 1, fp) != 1) {
+        2:   40:		free(bmp);
+        2:   41:		*a_error = read_header_error;
+        2:   42:		return NULL;
+        -:   43:	}
+        5:   44:	if(check_bmp_header((const BMPHeader*)&bmp -> header, fp)) {
+        1:   45:		bmp -> data = malloc(sizeof(unsigned char) * bmp -> header.image_size_bytes);
+        -:   46://		if(bmp -> data == NULL) {
+        -:   47://			free_bmp(bmp);
+        -:   48://			*a_error = strerror(errno);
+        -:   49://			return NULL;
+        -:   50://		}
+        1:   51:		if(fread(bmp -> data, sizeof(unsigned char) * bmp -> header.image_size_bytes, 1, fp) != 1) {
+    #####:   52:			*a_error = read_data_error;
+    #####:   53:			free_bmp(bmp);
+    #####:   54:			return NULL;
+        -:   55:		}
+        -:   56:	} else {
+        4:   57:		*a_error = header_error;
+        4:   58:		free(bmp);
+        4:   59:		return NULL;
+        -:   60:	}
+        1:   61:	*a_error = NULL;
+        1:   62:	return bmp;
+        -:   63:}
+        -:   64:
+        9:   65:bool check_bmp_header(const BMPHeader* bmp_hdr, FILE* fp) {
+        9:   66:	if(fp == NULL) {
+        8:   67:		return bmp_hdr -> type == MAGICVALUE &&
+        8:   68:			bmp_hdr -> offset == HEADERSIZE &&
+        8:   69:			bmp_hdr -> dib_header_size == DIBHEADERSIZE &&
+        8:   70:			bmp_hdr -> num_planes == NUMOFPLANES &&
+        8:   71:			bmp_hdr -> compression == COMPRESSION &&
+        8:   72:			bmp_hdr -> num_colors == NUMOFCOLORS &&
+        8:   73:			bmp_hdr -> important_colors == IMPORTANTCOLORS &&
+       12:   74:			bmp_hdr -> bits_per_pixel == BITSPERPIXEL &&
+        4:   75:			_get_image_size(bmp_hdr) == bmp_hdr -> image_size_bytes;
+        -:   76:	} else {
+       10:   77:		return bmp_hdr -> type == MAGICVALUE &&
+       10:   78:			bmp_hdr -> offset == HEADERSIZE &&
+       10:   79:			bmp_hdr -> dib_header_size == DIBHEADERSIZE &&
+       10:   80:			bmp_hdr -> num_planes == NUMOFPLANES &&
+       10:   81:			bmp_hdr -> compression == COMPRESSION &&
+       10:   82:			bmp_hdr -> num_colors == NUMOFCOLORS &&
+       10:   83:			bmp_hdr -> important_colors == IMPORTANTCOLORS &&
+       10:   84:			bmp_hdr -> bits_per_pixel == BITSPERPIXEL &&
+       13:   85:			_get_image_size(bmp_hdr) == bmp_hdr -> image_size_bytes &&
+        3:   86:			bmp_hdr -> size == _get_file_size(fp);
+        -:   87:	}
+        -:   88:}
+        -:   89:
+        3:   90:long _get_file_size(FILE* fp) {
+        3:   91:	long currentPosition = ftell(fp);
+        -:   92://	if(currentPosition == -1) {
+        -:   93://		return currentPosition;
+        -:   94://	}
+        3:   95:	fseek(fp, 0, SEEK_END);
+        3:   96:	long lastPosition = ftell(fp);
+        -:   97://	if(lastPosition == -1) {
+        -:   98://		return lastPosition;
+        -:   99://	}
+        3:  100:	fseek(fp, currentPosition, SEEK_SET);
+        3:  101:	return lastPosition;
+        -:  102:}
+        -:  103:
+       10:  104:int _get_image_size(const BMPHeader* header) {
+       10:  105:	return _get_row_size(header) * header -> height_px;
+        -:  106:}
+       60:  107:int _get_row_size(const BMPHeader* header) {
+       60:  108:	int row_size_no_padding = header -> width_px * BYTESPERPIXEL;
+       60:  109:	return row_size_no_padding + _get_padding(header);
+        -:  110:}
+      210:  111:int _get_padding(const BMPHeader* header) {
+      210:  112:	return (4 - (header -> width_px * BYTESPERPIXEL) % 4) % 4;
+        -:  113:}
+        -:  114:
+        5:  115:bool write_bmp(FILE* fp, BMPImage * image, const char** a_error) {
+        5:  116:	if(fp == NULL || ferror(fp)) {
+        2:  117:		*a_error = strerror(errno);
+        2:  118:		return NULL;
+        -:  119:	}
+        3:  120:	fseek(fp, 0, SEEK_SET);
+        3:  121:	if(image == NULL || !check_bmp_header((const BMPHeader*)&image -> header, NULL)) {
+        2:  122:		*a_error = header_error;
+        2:  123:		return false;	
+        -:  124:	}
+        1:  125:	fwrite(&image -> header, sizeof(BMPHeader), 1, fp);
+        1:  126:	fwrite(image -> data, sizeof(*(image -> data)), image -> header.image_size_bytes, fp);	
+        1:  127:	return true;
+        -:  128:}
+    #####:  129:void free_bmp(BMPImage* image) {
+    #####:  130:	if(image != NULL) {
+    #####:  131:		free(image -> data);
+        -:  132:	}
+    #####:  133:	free(image);
+        -:  134:
+    #####:  135:}
+        5:  136:BMPImage* crop_bmp(const BMPImage* image, int x, int y, int w, int h, const char** a_error) {
+        5:  137:	if(image == NULL || !check_bmp_header((const BMPHeader*)&image -> header, NULL)) {
+        4:  138:		*a_error = header_error;
+        4:  139:		return NULL;	
+        -:  140:	}
+        1:  141:	BMPImage* new_image = malloc(sizeof(*new_image));
+        -:  142://	if(new_image == NULL) {
+        -:  143://		free(new_image);
+        -:  144://		*a_error = strerror(errno);
+        -:  145://		return NULL;
+        -:  146://	}
+        1:  147:	new_image -> header = image -> header;
+        1:  148:	new_image -> header.width_px = w;
+        1:  149:	new_image -> header.height_px = h;
+        1:  150:	new_image -> header.image_size_bytes = _get_image_size((const BMPHeader*)&new_image -> header);
+        1:  151:	new_image -> header.size = new_image -> header.image_size_bytes + BMP_HEADER_SIZE;
+        1:  152:	new_image -> data = malloc(new_image -> header.image_size_bytes);
+        -:  153://	if(new_image -> data == NULL) {
+        -:  154://		free_bmp(new_image);
+        -:  155://		*a_error = strerror(errno);
+        -:  156://		return NULL;
+        -:  157://	}
+        1:  158:	int new_image_index = 0;
+       51:  159:	for(int i = 0; i < h; i++) {
+       50:  160:		int index = _get_row_size((const BMPHeader*)&image -> header) * i + x * BYTESPERPIXEL;
+     7550:  161:		for(int j = 0; j < w * BYTESPERPIXEL; j++) {	
+     7500:  162:			new_image -> data[new_image_index++] = image -> data[index++];
+        -:  163:		}
+      150:  164:		for(int a = 0; a < _get_padding((const BMPHeader*)&new_image -> header); a++) {
+      100:  165:			new_image -> data[new_image_index++] = 0x00;
+        -:  166:		}
+        -:  167:	}
+        1:  168:	*a_error = NULL;
+        1:  169:	return new_image;
+        -:  170:}

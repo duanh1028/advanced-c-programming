@@ -1,0 +1,77 @@
+#include<stdbool.h>
+#include<string.h>
+#include<errno.h>
+#include<stdio.h>
+#include<stdlib.h>
+#include<assert.h>
+#include "backwards_file.h"
+
+FileWrapper* create_file_wrapper(char* filename, char** a_error) {
+	FILE* fp = fopen(filename, "r");
+	if(fp == NULL || ferror(fp)) {
+		fprintf(stderr, "%s", strerror(errno));
+	}
+	fseek(fp, 0L, SEEK_END);
+	int size = ftell(fp);
+	int num = size / BUFFERSIZE + 1;
+	FileWrapper* a_file = malloc(size + BUFFERSIZE * num);
+	*a_file =(FileWrapper) {
+		.arr = malloc(BUFFERSIZE * num),
+		.fp_copy = fp,
+		.index = 0,
+		.bufferLocation = 0,
+		.num = num,
+	};
+	return a_file;
+}
+unsigned char* read_line(FileWrapper* fw, char** a_error) {
+//	int i = 0;
+	
+	fseek(fw -> fp_copy, 0, SEEK_SET);
+	fread(fw -> arr, sizeof(char), BUFFERSIZE, fw -> fp_copy);
+	printf("%s", fw -> arr);
+	
+	
+	
+	
+	
+	
+
+
+
+
+
+
+
+
+
+/*	fseek(fw -> fp_copy, -BUFFERSIZE, SEEK_CUR);
+	while((fw -> index) < (fw -> num)) {
+		fread(fw -> arr, sizeof(BUFFERSIZE), BUFFERSIZE, fw -> fp_copy);
+		fseek(fw -> fp_copy, -BUFFERSIZE, SEEK_CUR);
+		fw -> bufferLocation = 0;
+		(fw -> index)++;
+		while((fw -> arr)[fw -> bufferLocation] != '\0') {
+			line[i++] = (fw -> arr)[fw -> bufferLocation];
+			fw -> bufferLocation++;
+			if((fw -> arr)[fw -> bufferLocation] == '\n') {	
+				line[i++] = (fw -> arr)[fw -> bufferLocation];
+				return line;
+			}
+		}
+	}*/
+	return NULL;
+}
+/*void free_wrapper(FileWrapper* fw) {
+
+}
+
+	Node* a_node;
+	a_node ->buffer = fread12312;
+	a_node ->next = NULL;
+for() {
+	Node* newnode;
+	newnode -> buffer = malloc(sizeof(*buffer) * BUFFERSIZE);
+	newnode -> next = NULL;
+	a_node -> next = newnode;
+}*/

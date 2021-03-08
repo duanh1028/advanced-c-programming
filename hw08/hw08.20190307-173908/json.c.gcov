@@ -1,0 +1,144 @@
+        -:    0:Source:json.c
+        -:    0:Graph:json.gcno
+        -:    0:Data:json.gcda
+        -:    0:Runs:1
+        -:    0:Programs:1
+        -:    1:#include<stdbool.h>
+        -:    2:#include<stdio.h>
+        -:    3:#include<ctype.h>
+        -:    4:#include<stdlib.h>
+        -:    5:#include "json.h"
+        -:    6:
+        2:    7:bool parse_int(int* a_value, char** a_pos) {
+        2:    8:	int i = 0;
+        2:    9:	bool neg = false;
+        2:   10:	if(**a_pos == '-') {
+        1:   11:		i++;
+        1:   12:		(*a_pos)++;
+        1:   13:		neg = true;
+        -:   14:	}
+       10:   15:	while(isdigit(**a_pos)) {
+        6:   16:		i++;
+        6:   17:		(*a_pos)++;
+        -:   18:	}
+        2:   19:	*a_pos -= i;
+        2:   20:	int check = 0;
+        2:   21:	if(neg) {
+        1:   22:		(*a_pos)++;
+        1:   23:		check = 1;
+        -:   24:	}
+        8:   25:	for(int a = check; a < i; a++) {
+        6:   26:		*a_value = *a_value * 10 + (**a_pos - 48);
+        6:   27:		(*a_pos)++;
+        -:   28:	}
+        -:   29:
+        2:   30:	if(neg) {
+        1:   31:		*a_value = -(*a_value);
+        -:   32:	}
+        2:   33:	return true;
+        -:   34:}
+        -:   35:
+        8:   36:bool parse_element(Element* a_element, char** a_pos) {
+        -:   37:	bool result;
+       18:   38:	while(isspace(**a_pos)) {
+        2:   39:		(*a_pos)++;
+        -:   40:	}
+        8:   41:	if(isdigit(**a_pos) || ((**a_pos == '-') && isdigit(*(*a_pos + 1)))) {
+        2:   42:		a_element -> type = ELEMENT_INT;
+        2:   43:		a_element -> value.as_int = 0;
+        2:   44:		result = parse_int(&a_element -> value.as_int, a_pos);
+        2:   45:		return result;
+        -:   46:	}
+        6:   47:	else if(**a_pos == '"') {
+        4:   48:		a_element -> type = ELEMENT_STRING;
+        4:   49:		a_element -> value.as_string = NULL;
+        4:   50:		result = parse_string(&a_element -> value.as_string, a_pos);
+        4:   51:		return result;
+        -:   52:	}
+        -:   53:	else {
+        2:   54:		a_element -> type = ELEMENT_STRING;
+        2:   55:		a_element -> value.as_string = NULL;
+        2:   56:		return false;
+        -:   57:	}
+        -:   58:}
+        -:   59:
+        4:   60:bool parse_string(char** a_string, char** a_pos) {
+        4:   61:	int length = 0;
+        4:   62:	(*a_pos)++;
+       27:   63:	while(**a_pos != '\0') {
+       22:   64:		if(**a_pos == '\n') {
+        1:   65:			return false;    
+        -:   66:		}
+       21:   67:		if(**a_pos == '\"') {
+        2:   68:			char* temp = malloc(sizeof(char) * ++length);
+        2:   69:			*a_pos -= (length - 1);
+       12:   70:			for(int i = 0; i < length - 1; i++) {
+       10:   71:				temp[i] = **a_pos;
+       10:   72:				(*a_pos)++;
+        -:   73:			}
+        2:   74:			temp[length - 1] = '\0';
+        2:   75:			*a_string = temp;
+        2:   76:			return true;
+        -:   77:		}
+       19:   78:		(*a_pos)++;
+       19:   79:		length++;
+        -:   80:	}
+        1:   81:	return false;
+        -:   82:}
+        -:   83:/*
+        -:   84:bool parse_list(Node** a_head, char** a_pos) {
+        -:   85:	int size = 0;
+        -:   86:	(*a_pos)++;
+        -:   87:	while(**a_pos != '\0') {
+        -:   88:		if((**a_pos == ',') || (*(*a_pos - 1) == '[')) {
+        -:   89:			*a_pos++;
+        -:   90:			while(isspace(**a_pos)) {
+        -:   91:				*a_pos++;
+        -:   92:			}
+        -:   93:			if(**a_pos == '"') {
+        -:   94:				int length = 0;
+        -:   95:				(*a_pos)++;
+        -:   96:				while(**a_pos != ",") {
+        -:   97:					if(**a_pos == '\n') {
+        -:   98:						return false;    
+        -:   99:					}
+        -:  100:					if(**a_pos == '\"') {
+        -:  101:					}
+        -:  102:					(*a_pos)++;
+        -:  103:					length++;
+        -:  104:				}
+        -:  105:				return false;
+        -:  106:			}
+        -:  107:			else if((isdigit(**a_pos) || ((**a_pos == '-') && isdigit(*(*a_pos + 1))))) {
+        -:  108:
+        -:  109:			}
+        -:  110:			else {
+        -:  111:				return false;
+        -:  112:			}
+        -:  113:		}
+        -:  114:
+        -:  115:	}
+        -:  116:	return false;
+        -:  117:}
+        -:  118:*/
+        -:  119:
+        8:  120:void free_element(Element element) {
+        8:  121:	if(element.type == ELEMENT_STRING) {
+        6:  122:		if(element.value.as_string != NULL) {
+        2:  123:			free(element.value.as_string);
+        -:  124:		}
+        -:  125:	}
+        8:  126:}
+        -:  127:
+        8:  128:void print_element(Element element) {
+        8:  129:	if(element.type == ELEMENT_INT) {
+        2:  130:		printf("%d", element.value.as_int);
+        -:  131:	}
+        6:  132:	else if(element.type == ELEMENT_STRING) {
+        6:  133:		printf("%s", element.value.as_string);
+        -:  134:	}
+        -:  135:	else {
+        -:  136:	}
+        8:  137:}
+        -:  138:
+        -:  139:						

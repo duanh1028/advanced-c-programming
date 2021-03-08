@@ -1,0 +1,26 @@
+Breakpoint 1 at 0x4005e5: file prime_factor.c, line 17.
+Starting program: /home/shay/a/duanh/264/hw03/prime_factor 
+
+Breakpoint 1, print_prime_factors (n=6) at prime_factor.c:17
+17	    if(n <= 0) {
+Continuing.
+
+Breakpoint 1, print_prime_factors (n=1) at prime_factor.c:17
+17	    if(n <= 0) {
+Continuing.
+
+Breakpoint 1, print_prime_factors (n=0) at prime_factor.c:17
+17	    if(n <= 0) {
+Continuing.
+
+Breakpoint 1, print_prime_factors (n=48) at prime_factor.c:17
+17	    if(n <= 0) {
+Continuing.
+
+Breakpoint 1, print_prime_factors (n=49) at prime_factor.c:17
+17	    if(n <= 0) {
+21	        printf("Prime factors of %d:", n);
+23	        if(n == 1) {
+28	            while(n % 2 == 0) {
+34	            for(int i = 3; i * i < n; i += 2) {
+Undefined command: "ls".  Try "help".
